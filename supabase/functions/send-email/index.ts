@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
               </tr>
               <tr>
                 <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Submitted:</td>
-                <td style="padding: 10px 0; color: #1e293b; font-weight: 600;">${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</td>
+                <td style="padding: 10px 0; color: #1e293b; font-weight: 600;">${new Date().toISOString().split('T')[0]} at ${new Date().toISOString().split('T')[1].substring(0, 8)}</td>
               </tr>
             </table>
           </div>

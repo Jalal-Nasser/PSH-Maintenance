@@ -5,7 +5,7 @@ interface EmailRequest {
   message: string;
 }
 
-const ZEPTO_MAIL_URL = "https://api.zeptomail.com/v1.1/email"; 
+const ZEPTO_MAIL_URL = "https://api.zeptomail.com/v1.1/email";
 // You might need to adjust this URL based on your region (e.g., .eu, .in)
 
 serve(async (req: Request) => {
@@ -29,20 +29,24 @@ serve(async (req: Request) => {
     }
 
     // 3. Get Secrets
-    const ZEPTO_TOKEN = Deno.env.get('ZEPTO_TOKEN'); 
+    const ZEPTO_TOKEN = Deno.env.get('ZEPTO_TOKEN');
     // You MUST set this secret: npx supabase secrets set ZEPTO_TOKEN=your_token
 
     if (!ZEPTO_TOKEN) {
-        throw new Error("Missing ZEPTO_TOKEN secret");
+      throw new Error("Missing ZEPTO_TOKEN secret");
     }
 
     // 4. Send Email via Zepto Mail API
+    const authHeader = ZEPTO_TOKEN.startsWith('Zoho-enczapikey')
+      ? ZEPTO_TOKEN
+      : `Zoho-enczapikey ${ZEPTO_TOKEN}`;
+
     const response = await fetch(ZEPTO_MAIL_URL, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Authorization': `Zoho-enczapikey ${ZEPTO_TOKEN}`
+        'Authorization': authHeader
       },
       body: JSON.stringify({
         "from": { "address": "noreply@privetserver.com" },
@@ -62,8 +66,8 @@ serve(async (req: Request) => {
     const data = await response.json();
 
     if (!response.ok) {
-        console.error("Zepto Error:", data);
-        return new Response(JSON.stringify(data), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      console.error("Zepto Error:", data);
+      return new Response(JSON.stringify(data), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ message: "Email sent successfully" }), {

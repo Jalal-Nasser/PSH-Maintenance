@@ -89,11 +89,17 @@ export default function Maintenance() {
             if (dbError) throw dbError;
 
             // Trigger the email edge function
-            const { error: funcError } = await supabase.functions.invoke('send-email', {
+            const { data: funcData, error: funcError } = await supabase.functions.invoke('send-email', {
                 body: { sender_email: email, message: message }
             });
 
-            if (funcError) throw funcError;
+            if (funcError) {
+                // If the function returned a body with an error message, use it
+                const errorMsg = (funcError as any).context?.error?.message
+                    || (funcError as any).message
+                    || 'Function failed';
+                throw new Error(errorMsg);
+            }
 
             setSubmitStatus('success');
             setEmail('');

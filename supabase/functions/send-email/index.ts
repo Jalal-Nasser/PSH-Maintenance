@@ -51,8 +51,8 @@ Deno.serve(async (req) => {
     const authHeader = `Zoho-enczapikey ${ZEPTO_TOKEN.trim()}`;
     console.log("[LOG] Auth header prepared");
 
-    // Build HTML email body
-    const emailHTML = `
+    // Build HTML email body for support team
+    const supportEmailHTML = `
       <!DOCTYPE html>
       <html>
       <head>
@@ -139,7 +139,72 @@ Deno.serve(async (req) => {
       </html>
     `;
 
-    const response = await fetch("https://api.zeptomail.com/v1.1/email", {
+    // Build HTML email body for client receipt
+    const clientReceiptHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px 20px; text-align: center; border-bottom: 4px solid #059669;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Support Request Received ✓</h1>
+            <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Thank you for contacting us</p>
+          </div>
+          <div style="padding: 30px 20px; text-align: center;">
+            <div style="display: inline-block; background-color: #d1fae5; color: #047857; padding: 15px 30px; border-radius: 8px; font-weight: 600; font-size: 18px; margin-bottom: 20px;">
+              Ticket #${request_id}
+            </div>
+            <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">
+              Dear ${first_name},
+            </p>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0;">
+              We have successfully received your support request and it's now in our system. Our support team will review your request shortly and get back to you as soon as possible.
+            </p>
+          </div>
+          <div style="padding: 0 30px 30px 30px; border-bottom: 1px solid #e2e8f0;">
+            <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Request Summary</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b; font-weight: 500; width: 40%;">Ticket ID:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #1e293b; font-weight: 600;">${request_id}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b; font-weight: 500;">Service Type:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;"><span style="background-color: #dbeafe; color: #0284c7; padding: 4px 8px; border-radius: 16px; font-weight: 500; font-size: 12px; display: inline-block;">${service_type}</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9; color: #64748b; font-weight: 500;">Category:</td>
+                <td style="padding: 10px 0; border-bottom: 1px solid #f1f5f9;"><span style="background-color: #fef3c7; color: #b45309; padding: 4px 8px; border-radius: 16px; font-weight: 500; font-size: 12px; display: inline-block;">${section}</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Submitted:</td>
+                <td style="padding: 10px 0; color: #1e293b; font-weight: 600;">${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</td>
+              </tr>
+            </table>
+          </div>
+          <div style="padding: 30px 20px; background-color: #f0fdf4; border-left: 4px solid #059669;">
+            <h3 style="margin: 0 0 10px 0; color: #047857; font-size: 14px; font-weight: 600;">What Happens Next?</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #64748b; font-size: 13px; line-height: 1.8;">
+              <li>Our support team will review your request</li>
+              <li>You'll receive an email response within 24 hours</li>
+              <li>Keep your Ticket ID handy for reference</li>
+              <li>If urgent, please mark it in the message</li>
+            </ul>
+          </div>
+          <div style="padding: 20px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b;">If you have any questions, please reply to this email</p>
+            <p style="margin: 10px 0 0 0; font-size: 11px; color: #94a3b8;">© PrivetServer - Support Portal</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email to support team
+    const supportResponse = await fetch("https://api.zeptomail.com/v1.1/email", {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -157,23 +222,57 @@ Deno.serve(async (req) => {
           }
         ],
         "subject": `[${request_id}] New Support Request - ${service_type} / ${section}`,
-        "htmlbody": emailHTML
+        "htmlbody": supportEmailHTML
       })
     });
 
-    const resBody = await response.text();
-    console.log("[LOG] Zepto response status:", response.status);
-    console.log("[LOG] Zepto response:", resBody);
+    const supportResBody = await supportResponse.text();
+    console.log("[LOG] Support email response status:", supportResponse.status);
+    console.log("[LOG] Support email response:", supportResBody);
 
-    if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Failed to send email", details: resBody }), {
+    if (!supportResponse.ok) {
+      return new Response(JSON.stringify({ error: "Failed to send support email", details: supportResBody }), {
         status: 400, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    console.log("[SUCCESS] Email sent");
-    return new Response(JSON.stringify({ message: "Email sent successfully!" }), {
+    console.log("[SUCCESS] Support email sent");
+
+    // Send receipt email to client
+    const clientResponse = await fetch("https://api.zeptomail.com/v1.1/email", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': authHeader
+      },
+      body: JSON.stringify({
+        "from": { "address": "noreply@privetserver.com" },
+        "to": [
+          {
+            "email_address": {
+              "address": sender_email,
+              "name": `${first_name} ${last_name}`
+            }
+          }
+        ],
+        "subject": `Support Request Received - Ticket #${request_id}`,
+        "htmlbody": clientReceiptHTML
+      })
+    });
+
+    const clientResBody = await clientResponse.text();
+    console.log("[LOG] Client receipt response status:", clientResponse.status);
+    console.log("[LOG] Client receipt response:", clientResBody);
+
+    if (!clientResponse.ok) {
+      console.log("[WARNING] Failed to send client receipt email, but support email was sent");
+    } else {
+      console.log("[SUCCESS] Client receipt email sent");
+    }
+
+    return new Response(JSON.stringify({ message: "Support request processed and emails sent successfully!" }), {
       status: 200, 
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

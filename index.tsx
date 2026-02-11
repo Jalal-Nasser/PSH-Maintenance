@@ -5,6 +5,10 @@ import ReactDOM from 'react-dom/client';
 import React from 'react';
 import './src/index.css';
 
+import { supabase } from './src/supabase';
+
+// ... imports
+
 export default function Maintenance() {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
@@ -16,28 +20,23 @@ export default function Maintenance() {
         setIsSubmitting(true);
 
         try {
-            // Direct API call to Supabase
-            const response = await fetch('https://bsovkcoplpmxeanezfcm.supabase.co/rest/v1/contact_messages', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': 'YOUR_SUPABASE_ANON_KEY',
-                    'Authorization': 'Bearer YOUR_SUPABASE_ANON_KEY',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify({
-                    sender_email: email,
-                    message: message,
-                    recipient: 'support@privetserver.com',
-                    created_at: new Date().toISOString(),
-                }),
-            });
+            const { error } = await supabase
+                .from('contact_messages')
+                .insert([
+                    {
+                        sender_email: email,
+                        message: message,
+                        recipient: 'support@privetserver.com',
+                        created_at: new Date().toISOString(),
+                    }
+                ]);
 
-            if (response.ok) {
+            if (!error) {
                 setSubmitStatus('success');
                 setEmail('');
                 setMessage('');
             } else {
+                console.error('Supabase Error:', error);
                 setSubmitStatus('error');
             }
         } catch (error) {
@@ -48,6 +47,7 @@ export default function Maintenance() {
             setTimeout(() => setSubmitStatus('idle'), 3000);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">

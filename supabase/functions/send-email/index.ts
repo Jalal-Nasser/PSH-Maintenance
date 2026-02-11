@@ -67,7 +67,13 @@ serve(async (req: Request) => {
 
     if (!response.ok) {
       console.error("Zepto Error:", data);
-      return new Response(JSON.stringify(data), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify(data), {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
     }
 
     return new Response(JSON.stringify({ message: "Email sent successfully" }), {

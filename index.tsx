@@ -92,7 +92,7 @@ const CountdownTimer = ({ isAdmin, onEdit }: { isAdmin: boolean; onEdit?: () => 
     );
 };
 
-const ALLOWED_DOMAINS = [
+const DEFAULT_ALLOWED_DOMAINS = [
     'w-sala.com',
     'gscompany.sa',
     'jalalnasser.com',
@@ -119,16 +119,25 @@ export default function Maintenance() {
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
 
+    const [allowedDomains, setAllowedDomains] = useState<string[]>(() => {
+        const saved = localStorage.getItem('allowed_domains');
+        return saved ? JSON.parse(saved) : DEFAULT_ALLOWED_DOMAINS;
+    });
+
+
     // Admin state
     const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDomainModal, setShowDomainModal] = useState(false);
     const [adminPassword, setAdminPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const [editDays, setEditDays] = useState(2);
     const [editHours, setEditHours] = useState(12);
     const [editMinutes, setEditMinutes] = useState(0);
     const [editSeconds, setEditSeconds] = useState(0);
+    const [newDomain, setNewDomain] = useState('');
+
 
     const handleAdminLogin = () => {
         const correctPassword = 'R@sha1988#'; // Change this to your desired password
@@ -171,16 +180,33 @@ export default function Maintenance() {
         setShowEditModal(false);
     };
 
+    const handleAddDomain = () => {
+        if (newDomain && !allowedDomains.includes(newDomain)) {
+            const updated = [...allowedDomains, newDomain.toLowerCase().trim()];
+            setAllowedDomains(updated);
+            localStorage.setItem('allowed_domains', JSON.stringify(updated));
+            setNewDomain('');
+        }
+    };
+
+    const handleRemoveDomain = (domain: string) => {
+        const updated = allowedDomains.filter(d => d !== domain);
+        setAllowedDomains(updated);
+        localStorage.setItem('allowed_domains', JSON.stringify(updated));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
+
         e.preventDefault();
         setIsSubmitting(true);
         setErrorMessage('');
 
         // Domain Whitelist Validation
         const domainToWhiteList = relatedDomain.toLowerCase().trim();
-        const isAllowed = ALLOWED_DOMAINS.some(domain =>
+        const isAllowed = allowedDomains.some((domain: string) =>
             domainToWhiteList === domain || domainToWhiteList.endsWith(`.${domain}`)
         );
+
 
         if (!isAllowed) {
             setSubmitStatus('error');
@@ -373,6 +399,17 @@ export default function Maintenance() {
                             We'll be back online within
                         </p>
                         <CountdownTimer isAdmin={isAdminLoggedIn} onEdit={handleEditDuration} />
+                        {isAdminLoggedIn && (
+                            <motion.button
+                                onClick={() => setShowDomainModal(true)}
+                                className="mt-4 w-full py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg text-xs font-medium border border-blue-500/30 transition-all flex items-center justify-center gap-2"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                <RefreshCw className="w-3 h-3" />
+                                Manage Domains
+                            </motion.button>
+                        )}
                     </motion.div>
 
                     <motion.div
@@ -795,6 +832,87 @@ export default function Maintenance() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                {/* Admin Domain Management Modal */}
+                <AnimatePresence>
+
+                    {showDomainModal && (
+                        <motion.div
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowDomainModal(false)}
+                        >
+                            <motion.div
+                                className="bg-slate-800 border border-blue-500/30 rounded-lg p-8 max-w-md w-full mx-4 max-h-[80vh] flex flex-col"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-white">Manage Domains</h2>
+                                    <motion.button
+                                        onClick={() => setShowDomainModal(false)}
+                                        className="p-1 hover:bg-slate-700 rounded transition-all"
+                                        whileHover={{ scale: 1.1 }}
+                                    >
+                                        <X className="w-5 h-5 text-red-400" />
+                                    </motion.button>
+                                </div>
+
+                                <div className="flex gap-2 mb-6">
+                                    <input
+                                        type="text"
+                                        placeholder="Add new domain (e.g. example.com)"
+                                        value={newDomain}
+                                        onChange={(e) => setNewDomain(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleAddDomain()}
+                                        className="flex-1 px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 text-sm"
+                                    />
+                                    <motion.button
+                                        onClick={handleAddDomain}
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        Add
+                                    </motion.button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    {allowedDomains.map((domain) => (
+                                        <div
+                                            key={domain}
+                                            className="flex items-center justify-between p-3 bg-slate-900/30 border border-blue-500/10 rounded-lg group"
+                                        >
+                                            <span className="text-blue-200 text-sm">{domain}</span>
+                                            <button
+                                                onClick={() => handleRemoveDomain(domain)}
+                                                className="text-slate-500 hover:text-red-400 transition-colors"
+                                                title="Remove domain"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-6 pt-6 border-t border-slate-700">
+                                    <motion.button
+                                        onClick={() => setShowDomainModal(false)}
+                                        className="w-full bg-slate-700/50 text-white font-semibold py-2 rounded-lg hover:bg-slate-700 transition-all"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        Close
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
             </div>
         </div>
     );

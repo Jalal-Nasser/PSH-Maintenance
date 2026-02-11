@@ -640,15 +640,7 @@ export default function Maintenance() {
                         </motion.button>
 
                         {/* Status Messages */}
-                        {submitStatus === 'success' && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-green-400 text-sm text-center"
-                            >
-                                ✓ Request submitted successfully! Your ID is {requestId}
-                            </motion.div>
-                        )}
+
 
                         {submitStatus === 'error' && (
                             <motion.div
@@ -914,6 +906,52 @@ export default function Maintenance() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Success Modal */}
+                <AnimatePresence>
+                    {showSuccessModal && (
+                        <motion.div
+                            className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowSuccessModal(false)}
+                        >
+                            <motion.div
+                                className="bg-slate-800 border-2 border-green-500/30 rounded-3xl p-8 max-w-sm w-full text-center shadow-[0_0_50px_-12px_rgba(34,197,94,0.3)]"
+                                initial={{ scale: 0.8, y: 20, opacity: 0 }}
+                                animate={{ scale: 1, y: 0, opacity: 1 }}
+                                exit={{ scale: 0.8, y: 20, opacity: 0 }}
+                                transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <motion.div
+                                    className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6"
+                                    initial={{ scale: 0, rotate: -180 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ delay: 0.2, type: "spring", damping: 12 }}
+                                >
+                                    <CheckCircle2 className="w-12 h-12 text-green-400" />
+                                </motion.div>
+
+                                <h2 className="text-3xl font-bold text-white mb-2">Success!</h2>
+                                <p className="text-blue-100 mb-8 leading-relaxed">
+                                    Your support request has been sent successfully. We'll be in touch with you shortly.
+                                </p>
+
+                                <motion.button
+                                    onClick={() => setShowSuccessModal(false)}
+                                    className="w-full bg-green-500 hover:bg-green-400 text-slate-900 font-bold py-3 rounded-xl transition-all shadow-lg shadow-green-500/20"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    Great, thanks!
+                                </motion.button>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
 
             </div>
         </div>

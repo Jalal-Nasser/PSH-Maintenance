@@ -62,11 +62,17 @@ const CountdownTimer = () => {
 };
 
 export default function Maintenance() {
+    const [requestId] = useState(() => `PSH-${Math.random().toString(36).substring(2, 11).toUpperCase()}`);
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
+    const [companyName, setCompanyName] = useState('');
+    const [serviceType, setServiceType] = useState('Hosting');
+    const [section, setSection] = useState('Support');
+    const [relatedDomain, setRelatedDomain] = useState('');
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
     const [errorMessage, setErrorMessage] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -75,11 +81,19 @@ export default function Maintenance() {
         setErrorMessage('');
 
         try {
+            // Insert into database
             const { error: dbError } = await supabase
                 .from('contact_messages')
                 .insert([
                     {
+                        request_id: requestId,
+                        first_name: firstName,
+                        last_name: lastName,
                         sender_email: email,
+                        company_name: companyName,
+                        service_type: serviceType,
+                        section: section,
+                        related_domain: relatedDomain,
                         message: message,
                         recipient: 'support@privetserver.com',
                         created_at: new Date().toISOString(),
@@ -90,7 +104,17 @@ export default function Maintenance() {
 
             // Trigger the email edge function
             const { data: funcData, error: funcError } = await supabase.functions.invoke('send-email', {
-                body: { sender_email: email, message: message }
+                body: { 
+                    request_id: requestId,
+                    first_name: firstName,
+                    last_name: lastName,
+                    sender_email: email,
+                    company_name: companyName,
+                    service_type: serviceType,
+                    section: section,
+                    related_domain: relatedDomain,
+                    message: message
+                }
             });
 
             if (funcError) {
@@ -98,10 +122,8 @@ export default function Maintenance() {
                 console.error('Function Error Context:', (funcError as any).context);
                 console.error('Function Data:', funcData);
                 
-                // Extract error message from response
                 let errorDetails = '';
                 try {
-                    // Try multiple ways to extract the error message
                     const errorBody = (funcError as any).context?.error || funcData;
                     
                     if (typeof errorBody === 'string') {
@@ -110,7 +132,6 @@ export default function Maintenance() {
                         errorDetails = errorBody.error || errorBody.message || JSON.stringify(errorBody);
                     }
                     
-                    // Also try the error message directly
                     if (!errorDetails) {
                         errorDetails = funcError.message;
                     }
@@ -123,7 +144,13 @@ export default function Maintenance() {
             }
 
             setSubmitStatus('success');
+            setFirstName('');
+            setLastName('');
             setEmail('');
+            setCompanyName('');
+            setServiceType('Hosting');
+            setSection('Support');
+            setRelatedDomain('');
             setMessage('');
         } catch (error: any) {
             console.error('Error:', error);
@@ -131,7 +158,6 @@ export default function Maintenance() {
             setErrorMessage(error.message || error.error_description || 'Unknown error occurred');
         } finally {
             setIsSubmitting(false);
-            // setTimeout(() => setSubmitStatus('idle'), 3000);
         }
     };
 
@@ -274,7 +300,7 @@ export default function Maintenance() {
                 </motion.p>
 
                 <motion.div
-                    className="mt-12 bg-slate-800/50 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8 max-w-md mx-auto"
+                    className="mt-12 bg-slate-800/50 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8 max-w-2xl mx-auto"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.4 }}
@@ -288,37 +314,129 @@ export default function Maintenance() {
                             <Mail className="w-6 h-6 text-blue-400" />
                         </motion.div>
                         <h3 className="text-2xl font-bold text-white ml-3">
-                            Contact Us
+                            Support Request
                         </h3>
                     </div>
 
-                    <p className="text-blue-200 text-sm mb-6 text-center">
-                        Need urgent assistance? Send us a message and we'll get back to you soon.
+                    <p className="text-blue-200 text-sm mb-4 text-center">
+                        Need assistance? Submit a support request and we'll get back to you soon.
                     </p>
 
+                    {/* Request ID Display */}
+                    <div className="mb-4 p-3 bg-slate-700/30 border border-blue-400/30 rounded-lg">
+                        <p className="text-blue-300 text-sm text-center">
+                            <span className="font-semibold">Request ID:</span> {requestId}
+                        </p>
+                    </div>
+
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Name Row */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-blue-300 text-xs block mb-1">First Name *</label>
+                                <input
+                                    type="text"
+                                    placeholder="First name"
+                                    value={firstName}
+                                    onChange={(e) => setFirstName(e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-blue-300 text-xs block mb-1">Last Name *</label>
+                                <input
+                                    type="text"
+                                    placeholder="Last name"
+                                    value={lastName}
+                                    onChange={(e) => setLastName(e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Email */}
                         <div>
+                            <label className="text-blue-300 text-xs block mb-1">Email Address *</label>
                             <input
                                 type="email"
-                                placeholder="Your email address"
+                                placeholder="your@email.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+                                className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
                             />
                         </div>
 
+                        {/* Company Name */}
                         <div>
+                            <label className="text-blue-300 text-xs block mb-1">Company Name</label>
+                            <input
+                                type="text"
+                                placeholder="Company name (optional)"
+                                value={companyName}
+                                onChange={(e) => setCompanyName(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                            />
+                        </div>
+
+                        {/* Dropdowns Row */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-blue-300 text-xs block mb-1">Service Type *</label>
+                                <select
+                                    value={serviceType}
+                                    onChange={(e) => setServiceType(e.target.value)}
+                                    className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                >
+                                    <option>Hosting</option>
+                                    <option>Domain</option>
+                                    <option>Email</option>
+                                    <option>Security</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-blue-300 text-xs block mb-1">Section *</label>
+                                <select
+                                    value={section}
+                                    onChange={(e) => setSection(e.target.value)}
+                                    className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                >
+                                    <option>Support</option>
+                                    <option>Billing</option>
+                                    <option>Sales</option>
+                                    <option>Security</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Related Domain */}
+                        <div>
+                            <label className="text-blue-300 text-xs block mb-1">Related Domain/Service</label>
+                            <input
+                                type="text"
+                                placeholder="example.com (optional)"
+                                value={relatedDomain}
+                                onChange={(e) => setRelatedDomain(e.target.value)}
+                                className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                            />
+                        </div>
+
+                        {/* Message */}
+                        <div>
+                            <label className="text-blue-300 text-xs block mb-1">Message *</label>
                             <textarea
-                                placeholder="Your message"
+                                placeholder="Please describe your issue or question..."
                                 value={message}
                                 onChange={(e) => setMessage(e.target.value)}
                                 required
                                 rows={4}
-                                className="w-full px-4 py-3 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all resize-none"
+                                className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all resize-none text-sm"
                             />
                         </div>
 
+                        {/* Submit Button */}
                         <motion.button
                             type="submit"
                             disabled={isSubmitting}
@@ -333,23 +451,24 @@ export default function Maintenance() {
                                         animate={{ rotate: 360 }}
                                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                                     />
-                                    Sending...
+                                    Submitting...
                                 </>
                             ) : (
                                 <>
                                     <Send className="w-5 h-5" />
-                                    Send Message
+                                    Submit Request
                                 </>
                             )}
                         </motion.button>
 
+                        {/* Status Messages */}
                         {submitStatus === 'success' && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-green-400 text-sm text-center"
                             >
-                                ✓ Message sent successfully!
+                                ✓ Request submitted successfully! Your ID is {requestId}
                             </motion.div>
                         )}
 
@@ -359,7 +478,7 @@ export default function Maintenance() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-red-400 text-sm text-center"
                             >
-                                ✗ Failed to send: {errorMessage}
+                                ✗ Failed to submit: {errorMessage}
                             </motion.div>
                         )}
                     </form>

@@ -193,9 +193,21 @@ export default function Maintenance() {
                         <h3 className="text-lg font-semibold text-white mb-2">
                             What We're Doing
                         </h3>
-                        <p className="text-blue-200">
+                        <p className="text-blue-200 mb-4">
                             Upgrading systems & adding features
                         </p>
+                        <div className="w-full h-1.5 bg-slate-700/50 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-blue-400"
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '100%' }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    ease: "linear"
+                                }}
+                            />
+                        </div>
                     </motion.div>
                 </div>
 

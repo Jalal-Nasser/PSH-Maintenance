@@ -59,8 +59,7 @@ Deno.serve(async (req) => {
           }
         ],
         "subject": "New Contact Form Submission",
-        "htmlbody": `<div><b>From:</b> ${sender_email}<br><br><b>Message:</b><br>${message.replace(/\n/g, '<br>')}</div>`,
-        "replyto": { "address": sender_email }
+        "htmlbody": `<div><b>From:</b> ${sender_email}<br><br><b>Message:</b><br>${message.replace(/\n/g, '<br>')}</div>`
       })
     });
 

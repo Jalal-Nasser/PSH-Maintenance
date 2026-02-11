@@ -94,11 +94,17 @@ export default function Maintenance() {
             });
 
             if (funcError) {
-                // If the function returned a body with an error message, use it
-                const errorMsg = (funcError as any).context?.error?.message
-                    || (funcError as any).message
-                    || 'Function failed';
-                throw new Error(errorMsg);
+                console.error('Detailed Function Error:', funcError);
+                // Extract error message from body if possible
+                let errorDetails = '';
+                try {
+                    // Supabase FunctionsHTTPError stores the response body in the error object sometimes
+                    const body = (funcError as any).context?.error || funcData;
+                    errorDetails = body?.error?.message || body?.message || JSON.stringify(body);
+                } catch (e) { }
+
+                const finalMsg = errorDetails || funcError.message || 'Email service error';
+                throw new Error(finalMsg);
             }
 
             setSubmitStatus('success');

@@ -1,42 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 interface EmailRequest {
   sender_email: string;
   message: string;
 }
 
 const ZEPTO_MAIL_URL = "https://api.zeptomail.com/v1.1/email";
-// You might need to adjust this URL based on your region (e.g., .eu, .in)
 
 serve(async (req: Request) => {
-  // 1. Handle CORS (for local testing and browser calls)
+  // Handle CORS
   if (req.method === 'OPTIONS') {
-    return new Response('ok', {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-      }
-    })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const { sender_email, message } = await req.json() as EmailRequest;
 
-    // 2. Validate input
     if (!sender_email || !message) {
       throw new Error("Missing sender_email or message");
     }
 
-    // 3. Get Secrets
     const ZEPTO_TOKEN = Deno.env.get('ZEPTO_TOKEN');
-    // You MUST set this secret: npx supabase secrets set ZEPTO_TOKEN=your_token
-
     if (!ZEPTO_TOKEN) {
-      throw new Error("Missing ZEPTO_TOKEN secret");
+      throw new Error("Missing ZEPTO_TOKEN secret in Supabase");
     }
 
-    // 4. Send Email via Zepto Mail API
     const authHeader = ZEPTO_TOKEN.startsWith('Zoho-enczapikey')
       ? ZEPTO_TOKEN
       : `Zoho-enczapikey ${ZEPTO_TOKEN}`;
@@ -53,7 +46,7 @@ serve(async (req: Request) => {
         "to": [
           {
             "email_address": {
-              "address": "support@privetserver.com", // Your support email
+              "address": "support@privetserver.com",
               "name": "Support Team"
             }
           }
@@ -63,28 +56,26 @@ serve(async (req: Request) => {
       })
     });
 
-    const data = await response.json();
+    const resText = await response.text();
+    console.log("Zepto Response Text:", resText);
 
     if (!response.ok) {
-      console.error("Zepto Error:", data);
-      return new Response(JSON.stringify(data), {
+      return new Response(resText, {
         status: 400,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    return new Response(JSON.stringify({ message: "Email sent successfully" }), {
-      headers: { "Content-Type": "application/json", 'Access-Control-Allow-Origin': '*' },
+    return new Response(resText, {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Function Error:", errorMessage);
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
-      headers: { "Content-Type": "application/json", 'Access-Control-Allow-Origin': '*' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 })

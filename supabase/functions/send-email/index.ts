@@ -157,6 +157,8 @@ Deno.serve(async (req) => {
             <div style="display: inline-block; background-color: #d1fae5; color: #047857; padding: 15px 30px; border-radius: 8px; font-weight: 600; font-size: 18px; margin-bottom: 20px;">
               Ticket #${request_id}
             </div>
+          </div>
+          <div style="padding: 0 30px 30px 30px; text-align: left;">
             <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">
               Dear ${first_name},
             </p>

@@ -94,16 +94,31 @@ export default function Maintenance() {
             });
 
             if (funcError) {
-                console.error('Detailed Function Error:', funcError);
-                // Extract error message from body if possible
+                console.error('Full Function Error:', funcError);
+                console.error('Function Error Context:', (funcError as any).context);
+                console.error('Function Data:', funcData);
+                
+                // Extract error message from response
                 let errorDetails = '';
                 try {
-                    // Supabase FunctionsHTTPError stores the response body in the error object sometimes
-                    const body = (funcError as any).context?.error || funcData;
-                    errorDetails = body?.error?.message || body?.message || JSON.stringify(body);
-                } catch (e) { }
+                    // Try multiple ways to extract the error message
+                    const errorBody = (funcError as any).context?.error || funcData;
+                    
+                    if (typeof errorBody === 'string') {
+                        errorDetails = errorBody;
+                    } else if (errorBody && typeof errorBody === 'object') {
+                        errorDetails = errorBody.error || errorBody.message || JSON.stringify(errorBody);
+                    }
+                    
+                    // Also try the error message directly
+                    if (!errorDetails) {
+                        errorDetails = funcError.message;
+                    }
+                } catch (e) {
+                    console.error('Error parsing error:', e);
+                }
 
-                const finalMsg = errorDetails || funcError.message || 'Email service error';
+                const finalMsg = errorDetails || 'Email service error - check console for details';
                 throw new Error(finalMsg);
             }
 

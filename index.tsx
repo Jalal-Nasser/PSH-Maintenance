@@ -67,12 +67,15 @@ export default function Maintenance() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+    const [errorMessage, setErrorMessage] = useState('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setErrorMessage('');
 
         try {
-            const { error } = await supabase
+            const { error: dbError } = await supabase
                 .from('contact_messages')
                 .insert([
                     {
@@ -83,25 +86,25 @@ export default function Maintenance() {
                     }
                 ]);
 
-            if (!error) {
-                // Trigger the email edge function
-                await supabase.functions.invoke('send-email', {
-                    body: { sender_email: email, message: message }
-                });
+            if (dbError) throw dbError;
 
-                setSubmitStatus('success');
-                setEmail('');
-                setMessage('');
-            } else {
-                console.error('Supabase Error:', error);
-                setSubmitStatus('error');
-            }
-        } catch (error) {
+            // Trigger the email edge function
+            const { error: funcError } = await supabase.functions.invoke('send-email', {
+                body: { sender_email: email, message: message }
+            });
+
+            if (funcError) throw funcError;
+
+            setSubmitStatus('success');
+            setEmail('');
+            setMessage('');
+        } catch (error: any) {
             console.error('Error:', error);
             setSubmitStatus('error');
+            setErrorMessage(error.message || error.error_description || 'Unknown error occurred');
         } finally {
             setIsSubmitting(false);
-            setTimeout(() => setSubmitStatus('idle'), 3000);
+            // setTimeout(() => setSubmitStatus('idle'), 3000);
         }
     };
 
@@ -329,7 +332,7 @@ export default function Maintenance() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="text-red-400 text-sm text-center"
                             >
-                                ✗ Failed to send. Please try again.
+                                ✗ Failed to send: {errorMessage}
                             </motion.div>
                         )}
                     </form>

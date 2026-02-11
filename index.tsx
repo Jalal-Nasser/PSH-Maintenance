@@ -935,9 +935,19 @@ export default function Maintenance() {
                                 </motion.div>
 
                                 <h2 className="text-3xl font-bold text-white mb-2">Success!</h2>
-                                <p className="text-blue-100 mb-8 leading-relaxed">
-                                    Your support request has been sent successfully. We'll be in touch with you shortly.
+                                <div className="mb-6">
+                                    <p className="text-blue-100 mb-2 leading-relaxed">
+                                        Your support request has been sent successfully.
+                                    </p>
+                                    <div className="bg-slate-900/50 border border-blue-500/20 rounded-lg p-3 inline-block">
+                                        <p className="text-blue-300 text-xs mb-1 uppercase tracking-wider font-semibold">Request ID</p>
+                                        <p className="text-white font-mono text-lg">{requestId}</p>
+                                    </div>
+                                </div>
+                                <p className="text-blue-200 text-sm mb-8">
+                                    We'll be in touch with you shortly.
                                 </p>
+
 
                                 <motion.button
                                     onClick={() => setShowSuccessModal(false)}

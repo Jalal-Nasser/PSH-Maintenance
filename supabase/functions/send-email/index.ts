@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
           <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 30px 20px; text-align: center; border-bottom: 4px solid #059669;">
-            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Support Request Received ✓</h1>
+            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Support Request Received</h1>
             <p style="margin: 10px 0 0 0; color: #d1fae5; font-size: 14px;">Thank you for contacting us</p>
           </div>
           <div style="padding: 30px 20px; text-align: center;">

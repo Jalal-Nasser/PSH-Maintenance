@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { Wrench, Clock, RefreshCw, Mail, Send } from 'lucide-react';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 import './src/index.css';
@@ -8,33 +8,54 @@ import './src/index.css';
 import { supabase } from './src/supabase';
 
 // ... imports
-import { useEffect } from 'react';
+import { useEffect as useEffectOriginal } from 'react';
 
-const CountdownTimer = () => {
+const CountdownTimer = ({ isAdmin, onEdit }: { isAdmin: boolean; onEdit?: () => void }) => {
     const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 12, minutes: 0, seconds: 0 });
 
-    useEffect(() => {
-        const targetDate = new Date();
-        targetDate.setDate(targetDate.getDate() + 2);
+    useEffectOriginal(() => {
+        // Load from localStorage
+        const saved = localStorage.getItem('maintenance_duration');
+        if (saved) {
+            setTimeLeft(JSON.parse(saved));
+        } else {
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + 2);
+            updateTimer(targetDate);
+        }
 
         const timer = setInterval(() => {
-            const now = new Date();
-            const difference = targetDate.getTime() - now.getTime();
-
-            if (difference > 0) {
-                setTimeLeft({
-                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                    minutes: Math.floor((difference / 1000 / 60) % 60),
-                    seconds: Math.floor((difference / 1000) % 60),
-                });
+            const targetDate = new Date();
+            const saved = localStorage.getItem('maintenance_duration');
+            if (saved) {
+                const duration = JSON.parse(saved);
+                targetDate.setDate(targetDate.getDate() + duration.days);
+                targetDate.setHours(targetDate.getHours() + duration.hours);
+                targetDate.setMinutes(targetDate.getMinutes() + duration.minutes);
+                targetDate.setSeconds(targetDate.getSeconds() + duration.seconds);
             } else {
-                clearInterval(timer);
+                targetDate.setDate(targetDate.getDate() + 2);
             }
+
+            updateTimer(targetDate);
         }, 1000);
 
         return () => clearInterval(timer);
     }, []);
+
+    const updateTimer = (targetDate: Date) => {
+        const now = new Date();
+        const difference = targetDate.getTime() - now.getTime();
+
+        if (difference > 0) {
+            setTimeLeft({
+                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                minutes: Math.floor((difference / 1000 / 60) % 60),
+                seconds: Math.floor((difference / 1000) % 60),
+            });
+        }
+    };
 
     return (
         <div className="flex justify-center gap-2 text-white font-mono text-xl">
@@ -57,6 +78,16 @@ const CountdownTimer = () => {
                 <span className="bg-slate-700/50 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}</span>
                 <span className="text-xs text-blue-300 mt-1">s</span>
             </div>
+            {isAdmin && onEdit && (
+                <motion.button
+                    onClick={onEdit}
+                    className="ml-4 p-2 hover:bg-blue-500/20 rounded-lg transition-all"
+                    whileHover={{ scale: 1.1 }}
+                    title="Edit duration"
+                >
+                    <Edit2 className="w-4 h-4 text-blue-400" />
+                </motion.button>
+            )}
         </div>
     );
 };
@@ -74,6 +105,58 @@ export default function Maintenance() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    
+    // Admin state
+    const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [adminPassword, setAdminPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [editDays, setEditDays] = useState(2);
+    const [editHours, setEditHours] = useState(12);
+    const [editMinutes, setEditMinutes] = useState(0);
+    const [editSeconds, setEditSeconds] = useState(0);
+
+    const handleAdminLogin = () => {
+        const correctPassword = 'R@sha1988#'; // Change this to your desired password
+        if (adminPassword === correctPassword) {
+            setIsAdminLoggedIn(true);
+            setShowLoginModal(false);
+            setAdminPassword('');
+            setPasswordError('');
+        } else {
+            setPasswordError('Incorrect password');
+            setAdminPassword('');
+        }
+    };
+
+    const handleAdminLogout = () => {
+        setIsAdminLoggedIn(false);
+    };
+
+    const handleEditDuration = () => {
+        // Load current saved duration if exists
+        const saved = localStorage.getItem('maintenance_duration');
+        if (saved) {
+            const duration = JSON.parse(saved);
+            setEditDays(duration.days);
+            setEditHours(duration.hours);
+            setEditMinutes(duration.minutes);
+            setEditSeconds(duration.seconds);
+        }
+        setShowEditModal(true);
+    };
+
+    const handleSaveDuration = () => {
+        const newDuration = {
+            days: editDays,
+            hours: editHours,
+            minutes: editMinutes,
+            seconds: editSeconds
+        };
+        localStorage.setItem('maintenance_duration', JSON.stringify(newDuration));
+        setShowEditModal(false);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -184,6 +267,34 @@ export default function Maintenance() {
                     />
                 </motion.div>
 
+                {/* Admin Button */}
+                <motion.div
+                    className="absolute top-8 right-8"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    {!isAdminLoggedIn ? (
+                        <motion.button
+                            onClick={() => setShowLoginModal(true)}
+                            className="p-2 hover:bg-blue-500/20 rounded-lg transition-all"
+                            whileHover={{ scale: 1.1 }}
+                            title="Admin Login"
+                        >
+                            <LogIn className="w-6 h-6 text-blue-400" />
+                        </motion.button>
+                    ) : (
+                        <motion.button
+                            onClick={handleAdminLogout}
+                            className="p-2 hover:bg-red-500/20 rounded-lg transition-all"
+                            whileHover={{ scale: 1.1 }}
+                            title="Admin Logout"
+                        >
+                            <LogOut className="w-6 h-6 text-red-400" />
+                        </motion.button>
+                    )}
+                </motion.div>
+
                 <motion.div
                     className="relative inline-block mb-8"
                     animate={{ rotate: 360 }}
@@ -235,7 +346,7 @@ export default function Maintenance() {
                         <p className="text-blue-200 mb-4">
                             We'll be back online within
                         </p>
-                        <CountdownTimer />
+                        <CountdownTimer isAdmin={isAdminLoggedIn} onEdit={handleEditDuration} />
                     </motion.div>
 
                     <motion.div
@@ -483,6 +594,179 @@ export default function Maintenance() {
                         )}
                     </form>
                 </motion.div>
+
+                {/* Admin Login Modal */}
+                <AnimatePresence>
+                    {showLoginModal && (
+                        <motion.div
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowLoginModal(false)}
+                        >
+                            <motion.div
+                                className="bg-slate-800 border border-blue-500/30 rounded-lg p-8 max-w-sm w-full mx-4"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <h2 className="text-2xl font-bold text-white mb-6 text-center">Admin Login</h2>
+                                
+                                <div className="mb-4">
+                                    <label className="text-blue-300 text-sm block mb-2">Password</label>
+                                    <input
+                                        type="password"
+                                        placeholder="Enter admin password"
+                                        value={adminPassword}
+                                        onChange={(e) => {
+                                            setAdminPassword(e.target.value);
+                                            setPasswordError('');
+                                        }}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleAdminLogin();
+                                            }
+                                        }}
+                                        className="w-full px-4 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all"
+                                    />
+                                </div>
+
+                                {passwordError && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="text-red-400 text-sm mb-4 text-center"
+                                    >
+                                        {passwordError}
+                                    </motion.div>
+                                )}
+
+                                <div className="flex gap-3">
+                                    <motion.button
+                                        onClick={handleAdminLogin}
+                                        className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        Login
+                                    </motion.button>
+                                    <motion.button
+                                        onClick={() => {
+                                            setShowLoginModal(false);
+                                            setAdminPassword('');
+                                            setPasswordError('');
+                                        }}
+                                        className="flex-1 bg-slate-700/50 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 transition-all"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Admin Edit Duration Modal */}
+                <AnimatePresence>
+                    {showEditModal && (
+                        <motion.div
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowEditModal(false)}
+                        >
+                            <motion.div
+                                className="bg-slate-800 border border-blue-500/30 rounded-lg p-8 max-w-md w-full mx-4"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-white">Edit Duration</h2>
+                                    <motion.button
+                                        onClick={() => setShowEditModal(false)}
+                                        className="p-1 hover:bg-slate-700 rounded transition-all"
+                                        whileHover={{ scale: 1.1 }}
+                                    >
+                                        <X className="w-5 h-5 text-red-400" />
+                                    </motion.button>
+                                </div>
+
+                                <div className="grid grid-cols-4 gap-3 mb-6">
+                                    <div>
+                                        <label className="text-blue-300 text-xs block mb-2 text-center">Days</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            value={editDays}
+                                            onChange={(e) => setEditDays(Math.max(0, parseInt(e.target.value) || 0))}
+                                            className="w-full px-2 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white text-center focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-blue-300 text-xs block mb-2 text-center">Hours</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={23}
+                                            value={editHours}
+                                            onChange={(e) => setEditHours(Math.min(23, Math.max(0, parseInt(e.target.value) || 0)))}
+                                            className="w-full px-2 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white text-center focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-blue-300 text-xs block mb-2 text-center">Minutes</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={editMinutes}
+                                            onChange={(e) => setEditMinutes(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                                            className="w-full px-2 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white text-center focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-blue-300 text-xs block mb-2 text-center">Seconds</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={editSeconds}
+                                            onChange={(e) => setEditSeconds(Math.min(59, Math.max(0, parseInt(e.target.value) || 0)))}
+                                            className="w-full px-2 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white text-center focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <motion.button
+                                        onClick={handleSaveDuration}
+                                        className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:from-green-500 hover:to-green-400 transition-all flex items-center justify-center gap-2"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        Save
+                                    </motion.button>
+                                    <motion.button
+                                        onClick={() => setShowEditModal(false)}
+                                        className="flex-1 bg-slate-700/50 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-700 transition-all"
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        Cancel
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

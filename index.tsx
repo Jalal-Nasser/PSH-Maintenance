@@ -333,7 +333,7 @@ export default function Maintenance() {
                         {/* Name Row */}
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-blue-300 text-xs block mb-1">First Name *</label>
+                                <label className="text-blue-300 text-xs block mb-1 text-left">First Name *</label>
                                 <input
                                     type="text"
                                     placeholder="First name"
@@ -344,7 +344,7 @@ export default function Maintenance() {
                                 />
                             </div>
                             <div>
-                                <label className="text-blue-300 text-xs block mb-1">Last Name *</label>
+                                <label className="text-blue-300 text-xs block mb-1 text-left">Last Name *</label>
                                 <input
                                     type="text"
                                     placeholder="Last name"
@@ -358,7 +358,7 @@ export default function Maintenance() {
 
                         {/* Email */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1">Email Address *</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Email Address *</label>
                             <input
                                 type="email"
                                 placeholder="your@email.com"
@@ -371,7 +371,7 @@ export default function Maintenance() {
 
                         {/* Company Name */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1">Company Name</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Company Name</label>
                             <input
                                 type="text"
                                 placeholder="Company name (optional)"
@@ -384,7 +384,7 @@ export default function Maintenance() {
                         {/* Dropdowns Row */}
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-blue-300 text-xs block mb-1">Service Type *</label>
+                                <label className="text-blue-300 text-xs block mb-1 text-left">Service Type *</label>
                                 <select
                                     value={serviceType}
                                     onChange={(e) => setServiceType(e.target.value)}
@@ -397,7 +397,7 @@ export default function Maintenance() {
                                 </select>
                             </div>
                             <div>
-                                <label className="text-blue-300 text-xs block mb-1">Section *</label>
+                                <label className="text-blue-300 text-xs block mb-1 text-left">Section *</label>
                                 <select
                                     value={section}
                                     onChange={(e) => setSection(e.target.value)}
@@ -413,7 +413,7 @@ export default function Maintenance() {
 
                         {/* Related Domain */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1">Related Domain/Service</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Related Domain/Service</label>
                             <input
                                 type="text"
                                 placeholder="example.com (optional)"
@@ -425,7 +425,7 @@ export default function Maintenance() {
 
                         {/* Message */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1">Message *</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Message *</label>
                             <textarea
                                 placeholder="Please describe your issue or question..."
                                 value={message}

@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 import './src/index.css';
@@ -92,6 +92,19 @@ const CountdownTimer = ({ isAdmin, onEdit }: { isAdmin: boolean; onEdit?: () => 
     );
 };
 
+const ALLOWED_DOMAINS = [
+    'w-sala.com',
+    'gscompany.sa',
+    'jalalnasser.com',
+    'wahl.sa',
+    'portal.privetserver.com',
+    'destination.com.sa',
+    'homecare-cmc.com',
+    'canadian-mcsa.com',
+    'optmco.com',
+    'privetserver.com'
+];
+
 export default function Maintenance() {
     const [requestId] = useState(() => `PSH-${Math.random().toString(36).substring(2, 11).toUpperCase()}`);
     const [firstName, setFirstName] = useState('');
@@ -105,7 +118,7 @@ export default function Maintenance() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
-    
+
     // Admin state
     const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -163,6 +176,19 @@ export default function Maintenance() {
         setIsSubmitting(true);
         setErrorMessage('');
 
+        // Domain Whitelist Validation
+        const domainToWhiteList = relatedDomain.toLowerCase().trim();
+        const isAllowed = ALLOWED_DOMAINS.some(domain =>
+            domainToWhiteList === domain || domainToWhiteList.endsWith(`.${domain}`)
+        );
+
+        if (!isAllowed) {
+            setSubmitStatus('error');
+            setErrorMessage(`The domain "${relatedDomain}" is not in our allowed service list. Please enter a valid domain (e.g., wahl.sa, privetserver.com).`);
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
             // Insert into database
             const { error: dbError } = await supabase
@@ -187,7 +213,7 @@ export default function Maintenance() {
 
             // Trigger the email edge function
             const { data: funcData, error: funcError } = await supabase.functions.invoke('send-email', {
-                body: { 
+                body: {
                     request_id: requestId,
                     first_name: firstName,
                     last_name: lastName,
@@ -204,17 +230,17 @@ export default function Maintenance() {
                 console.error('Full Function Error:', funcError);
                 console.error('Function Error Context:', (funcError as any).context);
                 console.error('Function Data:', funcData);
-                
+
                 let errorDetails = '';
                 try {
                     const errorBody = (funcError as any).context?.error || funcData;
-                    
+
                     if (typeof errorBody === 'string') {
                         errorDetails = errorBody;
                     } else if (errorBody && typeof errorBody === 'object') {
                         errorDetails = errorBody.error || errorBody.message || JSON.stringify(errorBody);
                     }
-                    
+
                     if (!errorDetails) {
                         errorDetails = funcError.message;
                     }
@@ -482,12 +508,13 @@ export default function Maintenance() {
 
                         {/* Company Name */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1 text-left">Company Name</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Company Name *</label>
                             <input
                                 type="text"
-                                placeholder="Company name (optional)"
+                                placeholder="Company name"
                                 value={companyName}
                                 onChange={(e) => setCompanyName(e.target.value)}
+                                required
                                 className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
                             />
                         </div>
@@ -524,12 +551,13 @@ export default function Maintenance() {
 
                         {/* Related Domain */}
                         <div>
-                            <label className="text-blue-300 text-xs block mb-1 text-left">Related Domain/Service</label>
+                            <label className="text-blue-300 text-xs block mb-1 text-left">Related Domain/Service *</label>
                             <input
                                 type="text"
-                                placeholder="example.com (optional)"
+                                placeholder="example.com"
                                 value={relatedDomain}
                                 onChange={(e) => setRelatedDomain(e.target.value)}
+                                required
                                 className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all text-sm"
                             />
                         </div>
@@ -613,7 +641,7 @@ export default function Maintenance() {
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <h2 className="text-2xl font-bold text-white mb-6 text-center">Admin Login</h2>
-                                
+
                                 <div className="mb-4">
                                     <label className="text-blue-300 text-sm block mb-2">Password</label>
                                     <input

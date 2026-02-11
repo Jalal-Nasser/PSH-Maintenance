@@ -12,25 +12,25 @@ Deno.serve(async (req) => {
 
   try {
     console.log("[START] Email function invoked");
-    
+
     const body = await req.json();
-    const { 
+    const {
       request_id,
-      first_name, 
-      last_name, 
-      sender_email, 
+      first_name,
+      last_name,
+      sender_email,
       company_name,
       service_type,
       section,
       related_domain,
-      message 
+      message
     } = body;
 
     console.log("[LOG] Received:", { request_id, first_name, last_name, sender_email, message_length: message?.length });
 
     if (!first_name || !last_name || !sender_email || !message || !service_type || !section) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400, 
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     if (!ZEPTO_TOKEN) {
       console.error("[ERROR] ZEPTO_TOKEN not found in environment");
       return new Response(JSON.stringify({ error: "Token not configured" }), {
-        status: 500, 
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -158,11 +158,11 @@ Deno.serve(async (req) => {
               Ticket #${request_id}
             </div>
           </div>
-          <div style="padding: 0 30px 30px 30px; text-align: left;">
-            <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0;">
+          <div style="padding: 0 30px 30px 30px; text-align: left !important;">
+            <p style="color: #334155; font-size: 16px; margin: 0 0 20px 0; text-align: left;">
               Dear ${first_name},
             </p>
-            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0;">
+            <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 15px 0; text-align: left;">
               We have successfully received your support request and it's now in our system. Our support team will review your request shortly and get back to you as soon as possible.
             </p>
           </div>
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
 
     if (!supportResponse.ok) {
       return new Response(JSON.stringify({ error: "Failed to send support email", details: supportResBody }), {
-        status: 400, 
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
@@ -275,14 +275,14 @@ Deno.serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ message: "Support request processed and emails sent successfully!" }), {
-      status: 200, 
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
     console.error("[ERROR]", error.message);
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, 
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }

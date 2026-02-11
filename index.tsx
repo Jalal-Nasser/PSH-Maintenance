@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import Turnstile from 'react-turnstile';
+import { Analytics } from '@vercel/analytics/react';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 import './src/index.css';
@@ -987,7 +988,7 @@ export default function Maintenance() {
                     )}
                 </AnimatePresence>
 
-
+                <Analytics />
             </div>
         </div>
     );

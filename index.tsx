@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X } from 'lucide-react';
+import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
@@ -118,6 +118,7 @@ export default function Maintenance() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const [allowedDomains, setAllowedDomains] = useState<string[]>(() => {
         const saved = localStorage.getItem('allowed_domains');
@@ -278,6 +279,7 @@ export default function Maintenance() {
                 throw new Error(finalMsg);
             }
 
+            setShowSuccessModal(true);
             setSubmitStatus('success');
             setFirstName('');
             setLastName('');

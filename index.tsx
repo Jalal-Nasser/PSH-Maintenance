@@ -8,6 +8,58 @@ import './src/index.css';
 import { supabase } from './src/supabase';
 
 // ... imports
+import { useEffect } from 'react';
+
+const CountdownTimer = () => {
+    const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 12, minutes: 0, seconds: 0 });
+
+    useEffect(() => {
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + 2);
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            const difference = targetDate.getTime() - now.getTime();
+
+            if (difference > 0) {
+                setTimeLeft({
+                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((difference / 1000 / 60) % 60),
+                    seconds: Math.floor((difference / 1000) % 60),
+                });
+            } else {
+                clearInterval(timer);
+            }
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="flex justify-center gap-2 text-white font-mono text-xl">
+            <div className="flex flex-col items-center">
+                <span className="bg-slate-700/50 px-2 py-1 rounded">{String(timeLeft.days).padStart(2, '0')}</span>
+                <span className="text-xs text-blue-300 mt-1">d</span>
+            </div>
+            <span className="mt-1">:</span>
+            <div className="flex flex-col items-center">
+                <span className="bg-slate-700/50 px-2 py-1 rounded">{String(timeLeft.hours).padStart(2, '0')}</span>
+                <span className="text-xs text-blue-300 mt-1">h</span>
+            </div>
+            <span className="mt-1">:</span>
+            <div className="flex flex-col items-center">
+                <span className="bg-slate-700/50 px-2 py-1 rounded">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                <span className="text-xs text-blue-300 mt-1">m</span>
+            </div>
+            <span className="mt-1">:</span>
+            <div className="flex flex-col items-center">
+                <span className="bg-slate-700/50 px-2 py-1 rounded">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                <span className="text-xs text-blue-300 mt-1">s</span>
+            </div>
+        </div>
+    );
+};
 
 export default function Maintenance() {
     const [email, setEmail] = useState('');
@@ -124,9 +176,10 @@ export default function Maintenance() {
                         <h3 className="text-lg font-semibold text-white mb-2">
                             Expected Duration
                         </h3>
-                        <p className="text-blue-200">
-                            We'll be back online shortly
+                        <p className="text-blue-200 mb-4">
+                            We'll be back online within
                         </p>
+                        <CountdownTimer />
                     </motion.div>
 
                     <motion.div

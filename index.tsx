@@ -32,6 +32,11 @@ export default function Maintenance() {
                 ]);
 
             if (!error) {
+                // Trigger the email edge function
+                await supabase.functions.invoke('send-email', {
+                    body: { sender_email: email, message: message }
+                });
+
                 setSubmitStatus('success');
                 setEmail('');
                 setMessage('');

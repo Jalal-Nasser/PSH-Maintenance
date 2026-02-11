@@ -10,10 +10,10 @@ interface EmailRequest {
   message: string;
 }
 
+// NOTE: If your account is in EU or IN, change .com to .eu or .in
 const ZEPTO_MAIL_URL = "https://api.zeptomail.com/v1.1/email";
 
 serve(async (req: Request) => {
-  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -22,17 +22,25 @@ serve(async (req: Request) => {
     const { sender_email, message } = await req.json() as EmailRequest;
 
     if (!sender_email || !message) {
-      throw new Error("Missing sender_email or message");
+      return new Response(JSON.stringify({ error: "Missing sender_email or message" }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const ZEPTO_TOKEN = Deno.env.get('ZEPTO_TOKEN');
     if (!ZEPTO_TOKEN) {
-      throw new Error("Missing ZEPTO_TOKEN secret in Supabase");
+      return new Response(JSON.stringify({ error: "ZEPTO_TOKEN secret not found in Supabase" }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const authHeader = ZEPTO_TOKEN.startsWith('Zoho-enczapikey')
       ? ZEPTO_TOKEN
       : `Zoho-enczapikey ${ZEPTO_TOKEN}`;
+
+    console.log("Attempting to send email via Zepto...");
 
     const response = await fetch(ZEPTO_MAIL_URL, {
       method: 'POST',
@@ -56,24 +64,33 @@ serve(async (req: Request) => {
       })
     });
 
-    const resText = await response.text();
-    console.log("Zepto Response Text:", resText);
+    const resBody = await response.text();
+    console.log("Zepto RAW Response:", resBody);
 
     if (!response.ok) {
-      return new Response(resText, {
+      // Try to parse error message from Zepto
+      let errorMsg = resBody;
+      try {
+        const parsed = JSON.parse(resBody);
+        errorMsg = parsed.error?.message || parsed.message || resBody;
+      } catch (e) {
+        errorMsg = `Zepto Error (${response.status}): ${resBody}`;
+      }
+
+      return new Response(JSON.stringify({ error: errorMsg }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    return new Response(resText, {
+    return new Response(JSON.stringify({ message: "Email sent successfully" }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Function Error:", errorMessage);
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Critical Function Error:", msg);
+    return new Response(JSON.stringify({ error: `Internal Error: ${msg}` }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

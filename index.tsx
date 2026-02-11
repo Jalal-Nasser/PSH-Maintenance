@@ -141,6 +141,10 @@ export default function Maintenance() {
     const [editSeconds, setEditSeconds] = useState(0);
     const [newDomain, setNewDomain] = useState('');
 
+    useEffectOriginal(() => {
+        console.log("Turnstile Site Key Status:", import.meta.env.VITE_TURNSTILE_SITE_KEY ? "Loaded" : "Missing");
+    }, []);
+
 
     const handleAdminLogin = () => {
         const correctPassword = 'R@sha1988#'; // Change this to your desired password

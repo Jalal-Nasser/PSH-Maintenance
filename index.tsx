@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wrench, Clock, RefreshCw, Mail, Send, LogIn, LogOut, Edit2, Save, X, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import Turnstile from 'react-turnstile';
 import ReactDOM from 'react-dom/client';
 import React from 'react';
 import './src/index.css';
@@ -119,6 +120,7 @@ export default function Maintenance() {
     const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const [allowedDomains, setAllowedDomains] = useState<string[]>(() => {
         const saved = localStorage.getItem('allowed_domains');
@@ -216,6 +218,14 @@ export default function Maintenance() {
             return;
         }
 
+        if (!captchaToken) {
+            setSubmitStatus('error');
+            setErrorMessage("Please complete the security check.");
+            setIsSubmitting(false);
+            return;
+        }
+
+
         try {
             // Insert into database
             const { error: dbError } = await supabase
@@ -249,8 +259,10 @@ export default function Maintenance() {
                     service_type: serviceType,
                     section: section,
                     related_domain: relatedDomain,
-                    message: message
+                    message: message,
+                    captcha_token: captchaToken
                 }
+
             });
 
             if (funcError) {
@@ -611,6 +623,15 @@ export default function Maintenance() {
                                 required
                                 rows={4}
                                 className="w-full px-3 py-2 bg-slate-900/50 border border-blue-500/30 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 transition-all resize-none text-sm"
+                            />
+                        </div>
+
+                        {/* Bot Protection */}
+                        <div className="flex justify-center mb-4">
+                            <Turnstile
+                                sitekey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                                onVerify={(token) => setCaptchaToken(token)}
+                                theme="dark"
                             />
                         </div>
 

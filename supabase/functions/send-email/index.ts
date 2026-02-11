@@ -23,10 +23,42 @@ Deno.serve(async (req) => {
       service_type,
       section,
       related_domain,
-      message
+      message,
+      captcha_token
     } = body;
 
-    console.log("[LOG] Received:", { request_id, first_name, last_name, sender_email, message_length: message?.length });
+    console.log("[LOG] Received:", { request_id, first_name, last_name, sender_email, message_length: message?.length, has_captcha: !!captcha_token });
+
+    // 1. Verify Cloudflare Turnstile Captcha
+    const TURNSTILE_SECRET_KEY = Deno.env.get('TURNSTILE_SECRET_KEY');
+    if (TURNSTILE_SECRET_KEY && captcha_token) {
+      console.log("[LOG] Verifying Turnstile token...");
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `secret=${TURNSTILE_SECRET_KEY}&response=${captcha_token}`,
+      });
+
+      const verifyData = await verifyRes.json();
+      console.log("[LOG] Turnstile verification result:", verifyData.success);
+
+      if (!verifyData.success) {
+        console.error("[ERROR] Captcha verification failed:", verifyData);
+        return new Response(JSON.stringify({ error: "Security check failed. Please try again." }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } else if (TURNSTILE_SECRET_KEY && !captcha_token) {
+      console.error("[ERROR] Captcha token missing but protection is enabled");
+      return new Response(JSON.stringify({ error: "Please complete the security check." }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
 
     if (!first_name || !last_name || !sender_email || !message || !service_type || !section) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {

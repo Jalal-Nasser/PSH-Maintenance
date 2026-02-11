@@ -1,5 +1,29 @@
 {
-    "css.validate": false,
-    "scss.validate": false,
-    "less.validate": false
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "css.validate": false,
+  "deno.enable": true,
+  "deno.enablePaths": [
+    "supabase",
+    "supabase/functions"
+  ],
+  "deno.lint": true,
+  "deno.unstable": [
+    "bare-node-builtins",
+    "byonm",
+    "sloppy-imports",
+    "unsafe-proto",
+    "webgpu",
+    "broadcast-channel",
+    "worker-options",
+    "cron",
+    "kv",
+    "ffi",
+    "fs",
+    "http",
+    "net"
+  ],
+  "less.validate": false,
+  "scss.validate": false
 }

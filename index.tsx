@@ -16,29 +16,26 @@ const CountdownTimer = ({ isAdmin, onEdit }: { isAdmin: boolean; onEdit?: () => 
     const [timeLeft, setTimeLeft] = useState({ days: 2, hours: 12, minutes: 0, seconds: 0 });
 
     useEffectOriginal(() => {
-        // Load from localStorage
-        const saved = localStorage.getItem('maintenance_duration');
-        if (saved) {
-            setTimeLeft(JSON.parse(saved));
+        // Load target date from localStorage
+        let targetDate: Date;
+        const savedTarget = localStorage.getItem('maintenance_target_date');
+
+        if (savedTarget) {
+            targetDate = new Date(savedTarget);
         } else {
-            const targetDate = new Date();
+            // Fallback: Set default 2 days from now and save it
+            targetDate = new Date();
             targetDate.setDate(targetDate.getDate() + 2);
-            updateTimer(targetDate);
+            localStorage.setItem('maintenance_target_date', targetDate.toISOString());
+
+            // Also save default duration for edit modal
+            const defaultDuration = { days: 2, hours: 0, minutes: 0, seconds: 0 };
+            localStorage.setItem('maintenance_duration', JSON.stringify(defaultDuration));
         }
 
-        const timer = setInterval(() => {
-            const targetDate = new Date();
-            const saved = localStorage.getItem('maintenance_duration');
-            if (saved) {
-                const duration = JSON.parse(saved);
-                targetDate.setDate(targetDate.getDate() + duration.days);
-                targetDate.setHours(targetDate.getHours() + duration.hours);
-                targetDate.setMinutes(targetDate.getMinutes() + duration.minutes);
-                targetDate.setSeconds(targetDate.getSeconds() + duration.seconds);
-            } else {
-                targetDate.setDate(targetDate.getDate() + 2);
-            }
+        updateTimer(targetDate);
 
+        const timer = setInterval(() => {
             updateTimer(targetDate);
         }, 1000);
 
@@ -184,8 +181,19 @@ export default function Maintenance() {
             minutes: editMinutes,
             seconds: editSeconds
         };
+
+        // Calculate and save the specific end date
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + editDays);
+        targetDate.setHours(targetDate.getHours() + editHours);
+        targetDate.setMinutes(targetDate.getMinutes() + editMinutes);
+        targetDate.setSeconds(targetDate.getSeconds() + editSeconds);
+
         localStorage.setItem('maintenance_duration', JSON.stringify(newDuration));
-        setShowEditModal(false);
+        localStorage.setItem('maintenance_target_date', targetDate.toISOString());
+
+        // Force reload to update timer (simplest way to reset the interval in this architecture)
+        window.location.reload();
     };
 
     const handleAddDomain = () => {
